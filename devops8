@@ -1,0 +1,38 @@
+pipeline {
+    agent any
+    stages {
+        stage("Checkout") {
+            steps {
+                git branch: 'main', url: '<Your github url which ends with .git>'
+            }
+        }
+
+        stage("Build") {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+
+        stage("Test") {
+            steps {
+                sh 'mvn test'
+            }
+        }
+
+        stage("Archive Artifacts") {
+            steps {
+                archiveArtifacts artifacts: '**/target/*.jar', allowEmptyArchive: true
+            }
+        }
+
+        stage("Deploy") {
+            steps {
+                sh """
+                    export ANSIBLE_HOST_KEY_CHECKING=False
+
+                    ansible-playbook -i hosts.ini mydeploy.yml --extra-vars='ansible_become_pass=exam@cse'
+                """
+            }
+        }
+    }
+}
